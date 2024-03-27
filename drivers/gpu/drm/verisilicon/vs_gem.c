@@ -449,6 +449,7 @@ vs_gem_prime_import_sg_table(struct drm_device *dev,
     u32 i;
     dma_addr_t expected;
     size_t size = attach->dmabuf->size;
+    bool fake = false;
 #ifdef CONFIG_VERISILICON_MMU
     u32 iova;
     struct vs_drm_private *priv = dev->dev_private;
@@ -470,9 +471,15 @@ vs_gem_prime_import_sg_table(struct drm_device *dev,
     for_each_sg(sgt->sgl, s, sgt->nents, i) {
         if (sg_dma_address(s) != expected) {
 #ifndef CONFIG_VERISILICON_MMU
+#ifdef CONFIG_PVR_EGL_IMAGE_WORKAROUND
+            DRM_DEBUG("sg_table is not contiguous\n");
+            fake = true;
+            break;
+#else
             DRM_ERROR("sg_table is not contiguous");
             ret = -EINVAL;
             goto err;
+#endif
 #endif
         }
 
@@ -501,7 +508,10 @@ vs_gem_prime_import_sg_table(struct drm_device *dev,
         expected = sg_dma_address(s) + sg_dma_len(s);
     }
 
-    vs_obj->dma_addr = sg_dma_address(sgt->sgl);
+    if (!fake)
+        vs_obj->dma_addr = sg_dma_address(sgt->sgl);
+    else
+        vs_obj->dma_addr = 0;
 
     npages = vs_obj->size >> PAGE_SHIFT;
     vs_obj->pages = kvmalloc_array(npages, sizeof(struct page *),

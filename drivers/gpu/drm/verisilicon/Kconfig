@@ -58,3 +58,11 @@ config VERISILICON_DEC
 	  This is a decompression function which reads compressed pixels from
 	  external memory (DDR or SRAM) under DPU's control, then it decompress
 	  comprssed pixels before returing these pixels to DPU.
+
+config PVR_EGL_IMAGE_WORKAROUND
+	bool "Workaround PVR closed source driver EGLImage under X11"
+	depends on DRM_VERISILICON && !VERISILICON_MMU
+	help
+	  This option enables workaround of TH1520 PVR blob EGLImage
+	  implementation which will unconditionally import the EGLImage buffer
+	  to the display controller.
